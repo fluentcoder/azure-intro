@@ -28,8 +28,8 @@ namespace WebApplication
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            string con = "Server=(localdb)\\mssqllocaldb;Database=usersdbstore;Trusted_Connection=True;MultipleActiveResultSets=true";
-            //string con = "Server=tcp:myserverforwebapplication.database.windows.net,1433;Initial Catalog=TempDbForWebTest;Persist Security Info=False;User ID=dim97;Password=Janedimanoavesta1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
+            //string con = "Server=(localdb)\\mssqllocaldb;Database=usersdbstore;Trusted_Connection=True;MultipleActiveResultSets=true";
+            string con = "Server=tcp:myserverforwebapplication.database.windows.net,1433;Initial Catalog=TempDbForWebTest;Persist Security Info=False;User ID=dim97;Password=Janedimanoavesta1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
             services.AddDbContext<UsersContext>(options => options.UseSqlServer(con));
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddMvc(options =>

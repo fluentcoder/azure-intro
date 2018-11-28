@@ -70,6 +70,25 @@ namespace WebApplication.Controllers
             }
             return Ok(user);
         }
+
+        // GET: api/Users/byName/Bill
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetUserByName([FromRoute] string name)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var users = _context.Users.Where(s => s.Name == name).ToList();
+
+            if (users == null)
+            {
+                return NotFound();
+            }
+            return Ok(users);
+        }
+
         // GET: api/Users/5/xml
         [HttpGet("{id:int}/xml")]
         public async Task<IActionResult> GetUserInXml([FromRoute] int id)
