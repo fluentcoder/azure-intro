@@ -71,7 +71,7 @@ namespace WebApplication.Controllers
             return Ok(user);
         }
 
-        // GET: api/Users/byName/Bill
+        // GET: api/Users/Bill
         [HttpGet("{name}")]
         public async Task<IActionResult> GetUserByName([FromRoute] string name)
         {
@@ -82,7 +82,7 @@ namespace WebApplication.Controllers
             
             var users = _context.Users.Where(s => s.Name == name).ToList();
 
-            if (users == null)
+            if (users.Count == 0)
             {
                 return NotFound();
             }
