@@ -1,0 +1,6 @@
+C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\bin\Debug\UserCreator.dll
+C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\bin\Debug\UserCreator.pdb
+C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Debug\UserCreator.csprojAssemblyReference.cache
+C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Debug\UserCreator.csproj.CoreCompileInputs.cache
+C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Debug\UserCreator.dll
+C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Debug\UserCreator.pdb
