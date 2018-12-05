@@ -4,3 +4,17 @@ C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Relea
 C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Release\UserCreator.csproj.CoreCompileInputs.cache
 C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Release\UserCreator.dll
 C:\Users\dmitrijs.mamontovs\source\repos\FunctionApptest\DataProcessor\obj\Release\UserCreator.pdb
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\UserCreator.dll.config
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\UserCreator.dll
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\UserCreator.pdb
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\EntityFramework.dll
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\EntityFramework.SqlServer.dll
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\EntityFramework.xml
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\EntityFramework.SqlServer.xml
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\obj\Release\UserCreator.csprojAssemblyReference.cache
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\obj\Release\UserCreator.csproj.CoreCompileInputs.cache
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\obj\Release\UserCreator.csproj.CopyComplete
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\obj\Release\UserCreator.dll
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\obj\Release\UserCreator.pdb
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\Dapper.dll
+C:\Users\dmitrijs.mamontovs\Desktop\Git\azure-intro\FunctionApp\FunctionApptest\DataProcessor\bin\Release\Dapper.xml
