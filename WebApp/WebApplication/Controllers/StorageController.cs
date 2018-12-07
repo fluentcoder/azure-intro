@@ -7,7 +7,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.File;
 
 namespace WebApplication.Controllers
 {
@@ -15,44 +17,26 @@ namespace WebApplication.Controllers
     [ApiController]
     public class StorageController : ControllerBase
     {
-        public string con { get; set; } = "DefaultEndpointsProtocol=https;AccountName=mystorageaccountdm;AccountKey=/u3CY/DAt6m7hHrp51+Tan1UmfMXfT/b9cHU1YFB/ZiWL0dF8OvxZKzuN4pOvMbuCzA7lr45tm0c2yuaA9uoVg==;EndpointSuffix=core.windows.net";
+        //public string StorageAccountConnectionString { get; set; } = "DefaultEndpointsProtocol=https;AccountName=mystorageaccountdm;AccountKey=/u3CY/DAt6m7hHrp51+Tan1UmfMXfT/b9cHU1YFB/ZiWL0dF8OvxZKzuN4pOvMbuCzA7lr45tm0c2yuaA9uoVg==;EndpointSuffix=core.windows.net";
+        
+        private CloudStorageAccount _storageAccount;
+        private IConfiguration _configuration;
 
-        //// GET: api/Storage
-        //[Microsoft.AspNetCore.Mvc.HttpGet]
-        //public FileResult Get()
-        //{
-        //    string fileName = "Test.rtf";
-        //    var databytes = System.IO.File.ReadAllBytes(@"files/"+fileName);
-
-        //    FileResult result = new FileContentResult(databytes, "application/octet-stream");
-        //    result.FileDownloadName = fileName;
-
-        //    return result;
-        //}
-
-        // GET: api/Storage
-        [Microsoft.AspNetCore.Mvc.HttpGet("{name}")]
-        public async Task<FileResult> GetFromStorage([FromRoute] string name)
+        public StorageController(IConfiguration iConfig)
         {
-            //var filename = name;
-            //var storageAccount = CloudStorageAccount.Parse(con);
-            //var blobClient = storageAccount.CreateCloudBlobClient();
+            _configuration = iConfig;
+        }
 
-            //CloudBlobContainer container = blobClient.GetContainerReference("mycontainer");
-            //CloudBlockBlob blob = container.GetBlockBlobReference(path);
-
-            //byte[] databytes = new byte[blob.Properties.Length];
-            //blob.DownloadRangeToByteArrayAsync(databytes,0);
-
-            //FileResult result = new FileContentResult(databytes, "application/octet-stream");
-            //result.FileDownloadName = filename;
-
-            //return result;
-
+        // GET: api/Storage/blob/name
+        [Microsoft.AspNetCore.Mvc.HttpGet("blob/{name}")]
+        public async Task<FileResult> GetFromBlobStorage([FromRoute] string name)
+        {
+            string con = _configuration.GetSection("ConnectionStrings").GetSection("StorageAccountConnectionString").Value;
+            con.ToString();
+            _storageAccount = CloudStorageAccount.Parse(con);  
             string filename = name;
 
-            var storageAccount = CloudStorageAccount.Parse(con);
-            var blobClient = storageAccount.CreateCloudBlobClient();
+            var blobClient = _storageAccount.CreateCloudBlobClient();
             CloudBlobContainer blobContainer = blobClient.GetContainerReference("mycontainer");
             CloudBlockBlob blob = blobContainer.GetBlockBlobReference(filename);
             Stream blobStream = await blob.OpenReadAsync();
@@ -63,8 +47,31 @@ namespace WebApplication.Controllers
             var databytes = memoryStream.ToArray();
 
             var result = File(databytes, "application/octet-stream");
+           
+            return result;
 
-            //return Ok(blobStream);
+        }
+        // GET: api/Storage/file/name
+        [Microsoft.AspNetCore.Mvc.HttpGet("file/{name}")]
+        public async Task<FileResult> GetFromFileStorage([FromRoute] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            string filename = name;
+
+            var fileClient = _storageAccount.CreateCloudFileClient();
+            CloudFileShare fileShare = fileClient.GetShareReference("fileshare");
+            CloudFileDirectory rootDir = fileShare.GetRootDirectoryReference();
+            CloudFileDirectory fileDir = rootDir.GetDirectoryReference("Dir1");
+            CloudFile file = fileDir.GetFileReference(filename);
+            Stream fileStream = await file.OpenReadAsync();
+
+            var memoryStream = new MemoryStream();
+            fileStream.CopyTo(memoryStream);
+
+            var databytes = memoryStream.ToArray();
+
+            var result = File(databytes, "application/octet-stream");
+
             return result;
 
         }
