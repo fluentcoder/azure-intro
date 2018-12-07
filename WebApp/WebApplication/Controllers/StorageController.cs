@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System.IO;
@@ -10,6 +11,8 @@ using System.Web.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.File;
+using Microsoft.WindowsAzure.Storage.Table;
+using WebApplication.models;
 
 namespace WebApplication.Controllers
 {
@@ -17,7 +20,6 @@ namespace WebApplication.Controllers
     [ApiController]
     public class StorageController : ControllerBase
     {
-        //public string StorageAccountConnectionString { get; set; } = "DefaultEndpointsProtocol=https;AccountName=mystorageaccountdm;AccountKey=/u3CY/DAt6m7hHrp51+Tan1UmfMXfT/b9cHU1YFB/ZiWL0dF8OvxZKzuN4pOvMbuCzA7lr45tm0c2yuaA9uoVg==;EndpointSuffix=core.windows.net";
         
         private CloudStorageAccount _storageAccount;
         private IConfiguration _configuration;
@@ -73,7 +75,91 @@ namespace WebApplication.Controllers
             var result = File(databytes, "application/octet-stream");
 
             return result;
-
         }
+
+        // POST: api/Storage/table/create/name
+        [Microsoft.AspNetCore.Mvc.HttpPost("table/create")]
+        public async Task<IActionResult> CreateTable([Microsoft.AspNetCore.Mvc.FromBody] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString")); ;
+
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+
+            CloudTable table = tableClient.GetTableReference(name);
+            await table.CreateIfNotExistsAsync();
+
+            return Ok("Table " + name + " was created");
+        }
+
+        // POST: api/Storage/table/write/name
+        [Microsoft.AspNetCore.Mvc.HttpPost("table/write/{tableName}/{partitionKey?}")]
+        public async Task<IActionResult> WriteToTable([Microsoft.AspNetCore.Mvc.FromBody] Customer input, [FromRoute] string tableName, [FromRoute] string partitionKey)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+
+            Customer customer = new Customer(input);
+
+            if (partitionKey != null)
+            {
+                customer.PartitionKey = partitionKey;
+            }
+
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
+            TableOperation insertOperation = TableOperation.Insert(customer);
+
+            await table.ExecuteAsync(insertOperation);
+
+            return Ok("Entity joined to table");
+        }
+
+        // POST: api/Storage/table/writeBatch/name
+        [Microsoft.AspNetCore.Mvc.HttpPost("table/writeBatch/{tableName}/{partitionKey?}")]
+        public async Task<IActionResult> WriteBatchToTable([Microsoft.AspNetCore.Mvc.FromBody] Customer[] input, [FromRoute] string tableName, [FromRoute] string partitionKey)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+
+            TableBatchOperation batchOperation = new TableBatchOperation();
+
+            foreach (Customer item in input)
+            {
+                Customer customer = new Customer(item);
+                if (partitionKey != null)
+                {
+                    customer.PartitionKey = partitionKey;
+                }
+
+                batchOperation.Insert(customer);
+            }
+
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
+
+            await table.ExecuteBatchAsync(batchOperation);
+
+            return Ok("Batch items joined to table");
+        }
+        
+        //// GET: api/Storage/table/name
+        //[Microsoft.AspNetCore.Mvc.HttpGet("table/{tableName}/{partitionKey}")]
+        //public Task<IActionResult>GetDataFromTable([FromRoute] string tableName, [FromRoute] string partitionKey)
+        //{
+        //    _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+        //    CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+        //    CloudTable table = tableClient.GetTableReference(tableName);
+
+        //    TableQuery<Customer> query = new TableQuery<Customer>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey));
+
+        //    List<Customer> customers = new List<Customer>();
+            
+        //    foreach (Customer item in table.())
+        //    {
+
+        //    }
+
+        //    return Ok("Batch items joined to table");
+        //}
     }
+
+
 }
