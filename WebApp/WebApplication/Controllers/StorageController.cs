@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.File;
 
@@ -16,15 +17,23 @@ namespace WebApplication.Controllers
     [ApiController]
     public class StorageController : ControllerBase
     {
-        public string StorageAccountConnectionString { get; set; } = "DefaultEndpointsProtocol=https;AccountName=mystorageaccountdm;AccountKey=/u3CY/DAt6m7hHrp51+Tan1UmfMXfT/b9cHU1YFB/ZiWL0dF8OvxZKzuN4pOvMbuCzA7lr45tm0c2yuaA9uoVg==;EndpointSuffix=core.windows.net";
+        //public string StorageAccountConnectionString { get; set; } = "DefaultEndpointsProtocol=https;AccountName=mystorageaccountdm;AccountKey=/u3CY/DAt6m7hHrp51+Tan1UmfMXfT/b9cHU1YFB/ZiWL0dF8OvxZKzuN4pOvMbuCzA7lr45tm0c2yuaA9uoVg==;EndpointSuffix=core.windows.net";
         
         private CloudStorageAccount _storageAccount;
+        private IConfiguration _configuration;
+
+        public StorageController(IConfiguration iConfig)
+        {
+            _configuration = iConfig;
+        }
 
         // GET: api/Storage/blob/name
         [Microsoft.AspNetCore.Mvc.HttpGet("blob/{name}")]
         public async Task<FileResult> GetFromBlobStorage([FromRoute] string name)
         {
-            _storageAccount = CloudStorageAccount.Parse(StorageAccountConnectionString);
+            string con = _configuration.GetSection("ConnectionStrings").GetSection("StorageAccountConnectionString").Value;
+            con.ToString();
+            _storageAccount = CloudStorageAccount.Parse(con);  
             string filename = name;
 
             var blobClient = _storageAccount.CreateCloudBlobClient();
@@ -42,11 +51,11 @@ namespace WebApplication.Controllers
             return result;
 
         }
-        // GET: api/Storage/blob/name
+        // GET: api/Storage/file/name
         [Microsoft.AspNetCore.Mvc.HttpGet("file/{name}")]
         public async Task<FileResult> GetFromFileStorage([FromRoute] string name)
         {
-            _storageAccount = CloudStorageAccount.Parse(StorageAccountConnectionString);
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
             string filename = name;
 
             var fileClient = _storageAccount.CreateCloudFileClient();
