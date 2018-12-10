@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.WindowsAzure.Storage.Blob;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
-using System.Web.Http;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.File;
 using Microsoft.WindowsAzure.Storage.Table;
+using System.IO;
+using System.Threading.Tasks;
+using System.Web.Http;
 using WebApplication.models;
 
 namespace WebApplication.Controllers
@@ -20,7 +15,7 @@ namespace WebApplication.Controllers
     [ApiController]
     public class StorageController : ControllerBase
     {
-        
+
         private CloudStorageAccount _storageAccount;
         private IConfiguration _configuration;
 
@@ -35,7 +30,7 @@ namespace WebApplication.Controllers
         {
             string con = _configuration.GetSection("ConnectionStrings").GetSection("StorageAccountConnectionString").Value;
             con.ToString();
-            _storageAccount = CloudStorageAccount.Parse(con);  
+            _storageAccount = CloudStorageAccount.Parse(con);
             string filename = name;
 
             var blobClient = _storageAccount.CreateCloudBlobClient();
@@ -49,7 +44,7 @@ namespace WebApplication.Controllers
             var databytes = memoryStream.ToArray();
 
             var result = File(databytes, "application/octet-stream");
-           
+
             return result;
 
         }
@@ -139,26 +134,80 @@ namespace WebApplication.Controllers
 
             return Ok("Batch items joined to table");
         }
-        
-        //// GET: api/Storage/table/name
-        //[Microsoft.AspNetCore.Mvc.HttpGet("table/{tableName}/{partitionKey}")]
-        //public Task<IActionResult>GetDataFromTable([FromRoute] string tableName, [FromRoute] string partitionKey)
-        //{
-        //    _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
-        //    CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
-        //    CloudTable table = tableClient.GetTableReference(tableName);
 
-        //    TableQuery<Customer> query = new TableQuery<Customer>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey));
+        // GET: api/Storage/table/name/partitionKey
+        [Microsoft.AspNetCore.Mvc.HttpGet("table/{tableName}/{partitionKey}")]
+        public async Task<IActionResult> GetDataFromTableByPartitionKey([FromRoute] string tableName, [FromRoute] string partitionKey)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
 
-        //    List<Customer> customers = new List<Customer>();
-            
-        //    foreach (Customer item in table.())
-        //    {
+            TableQuery<Customer> query = new TableQuery<Customer>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey));
 
-        //    }
+            TableContinuationToken token = null;
 
-        //    return Ok("Batch items joined to table");
-        //}
+            TableQuerySegment<Customer> resultSegment = await table.ExecuteQuerySegmentedAsync(query, token);
+            return Ok(resultSegment.Results);
+        }
+
+        // GET: api/Storage/table/name/partitionKey/rowKey
+        [Microsoft.AspNetCore.Mvc.HttpGet("table/{tableName}/{partitionKey}/{rowKey}")]
+        public async Task<IActionResult> GetSingleDataFromTable([FromRoute] string tableName, [FromRoute] string partitionKey, [FromRoute] string rowKey)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
+
+            TableOperation retrieveOperation = TableOperation.Retrieve<Customer>(partitionKey, rowKey);
+            TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
+
+            return Ok((Customer)retrievedResult.Result);
+        }
+
+        // DELETE: api/Storage/table/name/partitionKey/rowKey
+        [Microsoft.AspNetCore.Mvc.HttpDelete("table/delete/{tableName}/{partitionKey}/{rowKey}")]
+        public async Task<IActionResult> DeleteDataFromTable([FromRoute] string tableName, [FromRoute] string partitionKey, [FromRoute] string rowKey)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
+
+            TableOperation retrieveOperation = TableOperation.Retrieve<Customer>(partitionKey, rowKey);
+            TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
+            Customer deleteEntity = (Customer)retrievedResult.Result;
+
+            if (deleteEntity != null)
+            {
+                TableOperation deleteOperation = TableOperation.Delete(deleteEntity);
+                await table.ExecuteAsync(deleteOperation);
+                return Ok("Entity was deleted");
+            }
+            return BadRequest();
+        }
+
+        // PUT: api/Storage/table/name/partitionKey/rowKey
+        [Microsoft.AspNetCore.Mvc.HttpPut("table/delete/{tableName}/{partitionKey}/{rowKey}")]
+        public async Task<IActionResult> UpdateData([Microsoft.AspNetCore.Mvc.FromBody] Customer input, [FromRoute] string tableName, [FromRoute] string partitionKey, [FromRoute] string rowKey)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudTableClient tableClient = _storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
+            TableOperation retrieveOperation = TableOperation.Retrieve<Customer>(partitionKey, rowKey);
+            TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
+            Customer updateCustomer = (Customer)retrievedResult.Result;
+
+            if (updateCustomer != null)
+            {
+                updateCustomer.Id = input.Id;
+                updateCustomer.Age = input.Age;
+                updateCustomer.Name = input.Name;
+                TableOperation updateOperation = TableOperation.Replace(updateCustomer);
+                await table.ExecuteAsync(updateOperation);
+                return Ok("Entity was updated");
+            }
+            return BadRequest();
+        }
     }
 
 
