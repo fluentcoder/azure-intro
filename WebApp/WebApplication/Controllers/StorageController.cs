@@ -7,7 +7,9 @@ using Microsoft.WindowsAzure.Storage.Table;
 using System.IO;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Microsoft.WindowsAzure.Storage.Queue;
 using WebApplication.models;
+using FromBodyAttribute = Microsoft.AspNetCore.Mvc.FromBodyAttribute;
 
 namespace WebApplication.Controllers
 {
@@ -208,7 +210,82 @@ namespace WebApplication.Controllers
             }
             return BadRequest();
         }
+
+        // POST: api/Storage/queue/create/name
+        [Microsoft.AspNetCore.Mvc.HttpPost("queue/create/{name}")]
+        public async Task<IActionResult> CreateQueue([FromRoute] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(name);
+            await queue.CreateIfNotExistsAsync();
+
+            return Ok();
+        }
+
+        // POST: api/Storage/queue/name
+        [Microsoft.AspNetCore.Mvc.HttpPost("queue/{name}")]
+        public async Task<IActionResult> WrireMessageToQueue([FromRoute] string name,[FromBody] string messageContent)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(name);
+            CloudQueueMessage message = new CloudQueueMessage(messageContent);
+            await queue.AddMessageAsync(message);
+
+            return Ok("Message: \""+message.AsString+ "\""+" was added to queue: \""+name+"\"" );
+        }
+
+        // GET: api/Storage/queue/name
+        [Microsoft.AspNetCore.Mvc.HttpGet("queue/{name}")]
+        public async Task<IActionResult> PeekNextMessage([FromRoute] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(name);
+            CloudQueueMessage peekedMessage = await queue.PeekMessageAsync();
+
+            return Ok(peekedMessage.AsString);
+        }
+
+        // GET: api/Storage/queue/get/name
+        [Microsoft.AspNetCore.Mvc.HttpGet("queue/get/{name}")]
+        public async Task<IActionResult> DeQueueNextMessage([FromRoute] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(name);
+            CloudQueueMessage retrievedMessage = await queue.GetMessageAsync();
+
+            await queue.DeleteMessageAsync(retrievedMessage);
+            return Ok($"Message: \"{retrievedMessage.AsString}\" was readed and removed");
+        }
+
+        // GET: api/Storage/queue/name
+        [Microsoft.AspNetCore.Mvc.HttpGet("queue/length/{name}")]
+        public async Task<IActionResult> GetQueueLength([FromRoute] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(name);
+
+           await queue.FetchAttributesAsync();
+
+            int? cachedMessageCount = queue.ApproximateMessageCount;
+
+            return Ok($"Count of messages in \"{name}\" : \"{cachedMessageCount}\" ");
+        }
+
+        // DELETE: api/Storage/queue/name
+        [Microsoft.AspNetCore.Mvc.HttpDelete("queue/delete/{name}")]
+        public async Task<IActionResult> DeleteQueue([FromRoute] string name)
+        {
+            _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
+            CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(name);
+            
+            await queue.DeleteAsync();
+            return Ok($"Queue \"{name}\" was removed");
+        }
     }
-
-
 }
