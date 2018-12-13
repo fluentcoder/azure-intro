@@ -1,0 +1,17 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=myfunctionappte81a9;AccountKey=8LvklM6iaJhy6cHCF+cBRGupF/IZBLn6m+K81ERZTTTOThitN8cc46rzdRrVX5wFSjyOPEtIRMy1QEPzv7oqNQ==;BlobEndpoint=https://myfunctionappte81a9.blob.core.windows.net/;TableEndpoint=https://myfunctionappte81a9.table.core.windows.net/;QueueEndpoint=https://myfunctionappte81a9.queue.core.windows.net/;FileEndpoint=https://myfunctionappte81a9.file.core.windows.net/",
+    "AzureWebJobsDashboard": "DefaultEndpointsProtocol=https;AccountName=myfunctionappte81a9;AccountKey=8LvklM6iaJhy6cHCF+cBRGupF/IZBLn6m+K81ERZTTTOThitN8cc46rzdRrVX5wFSjyOPEtIRMy1QEPzv7oqNQ==;BlobEndpoint=https://myfunctionappte81a9.blob.core.windows.net/;TableEndpoint=https://myfunctionappte81a9.table.core.windows.net/;QueueEndpoint=https://myfunctionappte81a9.queue.core.windows.net/;FileEndpoint=https://myfunctionappte81a9.file.core.windows.net/",
+    //"ConnectionString": "Server=tcp:myserverforwebapplication.database.windows.net,1433;Initial Catalog=TempDbForWebTest;Persist Security Info=False;User ID=dim97;Password=Janedimanoavesta1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+    "ConnectionString": "Server=(localdb)\\mssqllocaldb;Database=usersdbstore;Trusted_Connection=True;MultipleActiveResultSets=true"
+
+  },
+  "connectionStrings": {
+    "mycs": {
+      //"ConnectionString": "Server=tcp:myserverforwebapplication.database.windows.net,1433;Initial Catalog=TempDbForWebTest;Persist Security Info=False;User ID=dim97;Password=Janedimanoavesta1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
+      //"ConnectionString": "Server=(localdb)\\mssqllocaldb;Database=usersdbstore;Trusted_Connection=True;MultipleActiveResultSets=true",
+      "ProviderName": "System.Data.SqlClient"
+    }
+  }
+}
