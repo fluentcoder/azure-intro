@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,17 +28,25 @@ namespace WebApplication.Controllers
 
         // POST: api/ServiceBus/queue/name
         [HttpPost("queue/{queueName}")]
-        public async Task<ActionResult> SendMessage([FromRoute] string queueName, [FromBody] string content)
+        public async Task<ActionResult> SendMessages([FromRoute] string queueName, [FromBody] string[] content)
         {
+            
+
             try
             {
                 _queueClient = new QueueClient(_serviceBusConnectionString, queueName);
-                string messageBody = content;
-                Message message = new Message(Encoding.UTF8.GetBytes(messageBody)) { SessionId = _queueClient.ClientId };
+                string report = string.Empty;
 
-                // Send the message to the queue.
-                await _queueClient.SendAsync(message);
-                return Ok($"Message \"{messageBody}\" sended");
+                foreach (var message in content )
+                {
+                    string messageBody = message;
+                    Message messageToSend = new Message(Encoding.UTF8.GetBytes(messageBody));
+
+                    await _queueClient.SendAsync(messageToSend);
+
+                    report+=$"Message \"{messageBody}\" sended"+Environment.NewLine;
+                }
+                return Ok(report + Environment.NewLine + "All messages was sended.");
             }
             catch (Exception exception)
             {
@@ -44,61 +54,17 @@ namespace WebApplication.Controllers
             }
         }
 
-        // GET: api/ServiceBus/queue/name
-        [HttpGet("queue/{queueName}")]
-        public async Task<ActionResult> ProcessMessage([FromRoute] string queueName)
+
+        // POST: api/ServiceBus/queue/register/name
+        [HttpPost("queue/register/{queueName}")]
+        public async Task<ActionResult> RegisterMessageHandler([FromRoute] string queueName)
         {
-            _queueClient = new QueueClient(_serviceBusConnectionString, queueName);
+            await ServiceBusProcessor.RegisterOnMessageHandlerAndReceiveMessages(
+                new QueueClient(_serviceBusConnectionString, queueName), _logQueueConnectionString);
 
-            RegisterOnMessageHandlerAndReceiveMessages();
-
-            return Ok("done");
+            return Ok($"MessageHandler was registered on queue: \"{queueName}\"");
         }
 
-        static async Task RegisterOnMessageHandlerAndReceiveMessages()
-        {
-            // Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
-            var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
-            {
-                // Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
-                // Set it according to how many messages the application wants to process in parallel.
-                MaxConcurrentCalls = 1,
-
-                // Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
-                // False below indicates the Complete will be handled by the User Callback as in `ProcessMessagesAsync` below.
-                AutoComplete = false,
-            };
-
-            // Register the function that will process messages
-            _queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
-            await Log("Message handler registered");
-        }
-
-        static async Task ProcessMessagesAsync(Message message, CancellationToken token)
-        {
-
-            await Log("Message handler started message processing");
-
-            string messageContent =
-                $"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}";
-
-            await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
-            await Log("Message processed :"+messageContent);
-        }
-
-        static async Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
-        {
-            await Log(exceptionReceivedEventArgs.Exception.ToString());
-
-        }
-
-        static async Task Log(string messageContent)
-        {
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_logQueueConnectionString);
-            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
-            CloudQueue queue = queueClient.GetQueueReference("debuglog");
-            CloudQueueMessage message = new CloudQueueMessage(messageContent);
-            await queue.AddMessageAsync(message);
-        }
+        
     }
 }
