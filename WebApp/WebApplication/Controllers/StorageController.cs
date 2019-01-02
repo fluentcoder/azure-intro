@@ -31,7 +31,6 @@ namespace WebApplication.Controllers
         public async Task<FileResult> GetFromBlobStorage([FromRoute] string name)
         {
             string con = _configuration.GetSection("ConnectionStrings").GetSection("StorageAccountConnectionString").Value;
-            con.ToString();
             _storageAccount = CloudStorageAccount.Parse(con);
             string filename = name;
 
@@ -225,7 +224,7 @@ namespace WebApplication.Controllers
 
         // POST: api/Storage/queue/name
         [Microsoft.AspNetCore.Mvc.HttpPost("queue/{name}")]
-        public async Task<IActionResult> WrireMessageToQueue([FromRoute] string name,[FromBody] string messageContent)
+        public async Task<IActionResult> WriteMessageToQueue([FromRoute] string name,[FromBody] string messageContent)
         {
             _storageAccount = CloudStorageAccount.Parse(_configuration.GetValue<string>("ConnectionStrings:StorageAccountConnectionString"));
             CloudQueueClient queueClient = _storageAccount.CreateCloudQueueClient();
