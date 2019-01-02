@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.Models;
 using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace WebApplication.Controllers
 {
@@ -23,7 +20,14 @@ namespace WebApplication.Controllers
 
         public KeyVaultController(IConfiguration iConfig)
         {
-            _keyVaultUri = iConfig.GetSection("AppSettings").GetSection("KeyVaultUri").Value;
+            _keyVaultUri = (iConfig != null)
+                ? iConfig.GetSection("AppSettings").GetSection("KeyVaultUri").Value
+                : string.Empty;
+        }
+
+        public void UpdateKeyVaultUri(string newUri)
+        {
+            _keyVaultUri = newUri;
         }
 
         // GET: api/KeyVault/secret/name
@@ -40,8 +44,8 @@ namespace WebApplication.Controllers
                     .GetSecretAsync(_keyVaultUri, nameOfSecret)
                     .ConfigureAwait(false);
                 Message = secret.Value;
-                
-                return Ok("Message: " + Message);
+
+                return Ok(Message);
             }
 
             /// <exception cref="KeyVaultErrorException">
@@ -51,12 +55,12 @@ namespace WebApplication.Controllers
             {
                 Message = keyVaultException.Message;
 
-                return BadRequest("Exception: "+Message);
+                return BadRequest("Exception: " + Message);
             }
         }
         // POST: api/KeyVault/secret/name
         [HttpPost("secret/{nameOfSecret}")]
-        public async Task<IActionResult> CreateSecret([FromRoute] string nameOfSecret,[FromBody] string content)
+        public async Task<IActionResult> CreateSecret([FromRoute] string nameOfSecret, [FromBody] string content)
         {
             Message = ".";
             try
@@ -64,10 +68,9 @@ namespace WebApplication.Controllers
                 AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
                 KeyVaultClient keyVaultClient = new KeyVaultClient(
                     new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
-                var secret = await keyVaultClient.SetSecretWithHttpMessagesAsync(_keyVaultUri, nameOfSecret,content);
-                Message = secret.Body.Id;
+                var secret = await keyVaultClient.SetSecretWithHttpMessagesAsync(_keyVaultUri, nameOfSecret, content);
 
-                return Ok("New secret Id: " + Message + Environment.NewLine + "Name of secret: " + nameOfSecret);
+                return Ok(secret.Body.Value);
             }
 
             /// <exception cref="KeyVaultErrorException">
@@ -98,10 +101,7 @@ namespace WebApplication.Controllers
 
                 var result = key.Body.Key;
 
-                return Ok("Key created !" + Environment.NewLine + 
-                          "Key identifier: "+result.Kid + Environment.NewLine + 
-                          "Key type: "+result.Kty
-                          );
+                return Ok(result);
             }
 
             /// <exception cref="KeyVaultErrorException">
@@ -119,7 +119,6 @@ namespace WebApplication.Controllers
         public async Task<IActionResult> GetKey([FromRoute] string name)
         {
             Message = ".";
-            string version;
             try
             {
                 AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
@@ -129,12 +128,13 @@ namespace WebApplication.Controllers
                 var key = await keyVaultClient.GetKeyWithHttpMessagesAsync(_keyVaultUri, name, lastVersion);
                 var result = key.Body.Key;
 
-                return Ok("Key received !" + Environment.NewLine +
-                          "Key identifier: " + result.Kid + Environment.NewLine +
-                          "Key type: " + result.Kty + Environment.NewLine +
-                          "Key last version: "+ lastVersion+ Environment.NewLine +
-                          "Request Id: " + key.RequestId 
-                );
+                return Ok(result);
+                //return Ok("Key received !" + Environment.NewLine +
+                //          "Key identifier: " + result.Kid + Environment.NewLine +
+                //          "Key type: " + result.Kty + Environment.NewLine +
+                //          "Key last version: "+ lastVersion+ Environment.NewLine +
+                //          "Request Id: " + key.RequestId 
+                //);
             }
 
             /// <exception cref="KeyVaultErrorException">
@@ -173,9 +173,9 @@ namespace WebApplication.Controllers
                 return BadRequest("Exception: " + exception);
             }
         }
-        // POST: api/KeyVault/key/name
-        [HttpPost("key/{name}")]
-        public async Task<IActionResult> EncryptData([FromRoute] string name,[FromBody]string input)
+        // POST: api/KeyVault/encrypt/name
+        [HttpPost("encrypt/{name}")]
+        public async Task<IActionResult> EncryptData([FromRoute] string name, [FromBody]string input)
         {
             Message = ".";
 
@@ -188,11 +188,11 @@ namespace WebApplication.Controllers
                 byte[] bytes = Encoding.ASCII.GetBytes(input);
 
                 var lastVersion = keyVaultClient.GetKeyVersionsWithHttpMessagesAsync(_keyVaultUri, name).Result.Body.ToList().FirstOrDefault().Identifier.Version;
-                var output = await keyVaultClient.EncryptWithHttpMessagesAsync(_keyVaultUri, name, lastVersion, "RSA-OAEP-256",bytes);
+                var output = await keyVaultClient.EncryptWithHttpMessagesAsync(_keyVaultUri, name, lastVersion, "RSA-OAEP-256", bytes);
 
                 var output1 = await keyVaultClient.DecryptWithHttpMessagesAsync(_keyVaultUri, name, lastVersion, "RSA-OAEP-256", output.Body.Result);
                 return Ok(output.Body.Result);
- 
+
             }
 
             /// <exception cref="KeyVaultErrorException">
@@ -205,8 +205,8 @@ namespace WebApplication.Controllers
                 return BadRequest("Exception: " + exception);
             }
         }
-        // GET: api/KeyVault/key/value/name
-        [HttpGet("key/value/{name}")]
+        // GET: api/KeyVault/key/decrypt/name
+        [HttpGet("key/decrypt/{name}")]
         public async Task<IActionResult> DecryptData([FromRoute] string name, [FromBody]byte[] data)
         {
             Message = ".";
@@ -218,7 +218,7 @@ namespace WebApplication.Controllers
                     new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
 
                 var lastVersion = keyVaultClient.GetKeyVersionsWithHttpMessagesAsync(_keyVaultUri, name).Result.Body.ToList().FirstOrDefault().Identifier.Version;
-                var output = await keyVaultClient.DecryptWithHttpMessagesAsync(_keyVaultUri,name,lastVersion, "RSA-OAEP-256", data);
+                var output = await keyVaultClient.DecryptWithHttpMessagesAsync(_keyVaultUri, name, lastVersion, "RSA-OAEP-256", data);
                 return Ok(Encoding.UTF8.GetString(output.Body.Result));
             }
 
